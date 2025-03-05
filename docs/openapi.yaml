@@ -1,0 +1,254 @@
+openapi: 3.0.3
+info:
+  title: Wombackend API
+  description: Una API RESTful para gestionar tareas con arquitectura hexagonal y autenticación JWT, desplegada en Google Cloud Functions.
+  version: 1.0.0
+  contact:
+    name: Derlis Garcete
+    email: derlisg@gmail.com
+
+servers:
+  - url: https://wombackend-158550194403.us-east1.run.app
+    description: Entorno de producción en Google Cloud Functions
+    variables:
+      REGION:
+        default: us-east1
+        description: Región de Google Cloud
+      PROJECT_ID:
+        default: wombackend
+        description: ID del proyecto en Google Cloud
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT para autenticación. Obténlo mediante un endpoint de login (no implementado en esta versión).
+
+  schemas:
+    Task:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          description: Título de la tarea
+          example: "Comprar leche"
+        description:
+          type: string
+          description: Descripción opcional de la tarea
+          example: "2 litros"
+          nullable: true
+        completed:
+          type: boolean
+          description: Estado de la tarea
+          default: false
+          example: false
+      additionalProperties: false
+
+    Error:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Mensaje de error
+          example: "Task not found"
+
+  responses:
+    Unauthorized:
+      description: No autorizado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: "Invalid token"
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            detail: "Task not found"
+
+security:
+  - BearerAuth: []
+
+paths:
+  /login:
+    post:
+      summary: Autenticar usuario y obtener token JWT
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                username: { type: string, example: "testuser" }
+                password: { type: string, example: "testpassword" }
+              required: [username, password]
+      responses:
+        "200":
+          description: Token generado exitosamente
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Token" }
+              example:
+                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: "bearer"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+          content:
+            application/json:
+              example: { detail: "Incorrect username or password" }
+  /tasks/:
+    post:
+      summary: Crear una nueva tarea
+      operationId: createTask
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Task"
+            example:
+              title: "Comprar leche"
+              description: "2 litros"
+              completed: false
+      responses:
+        "201":
+          description: Tarea creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+              example:
+                title: "Comprar leche"
+                description: "2 litros"
+                completed: false
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    get:
+      summary: Listar todas las tareas
+      operationId: getTasks
+      security:
+        - BearerAuth: []
+      responses:
+        "200":
+          description: Lista de tareas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+              example:
+                - title: "Comprar leche"
+                  description: "2 litros"
+                  completed: false
+                - title: "Llamar al cliente"
+                  description: null
+                  completed: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /tasks/{task_id}:
+    get:
+      summary: Obtener una tarea específica
+      operationId: getTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la tarea
+          example: "abc123"
+      responses:
+        "200":
+          description: Tarea encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+              example:
+                title: "Comprar leche"
+                description: "2 litros"
+                completed: false
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    put:
+      summary: Actualizar una tarea existente
+      operationId: updateTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la tarea
+          example: "abc123"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Task"
+            example:
+              title: "Comprar leche"
+              description: "2 litros (urgente)"
+              completed: true
+      responses:
+        "200":
+          description: Tarea actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+              example:
+                title: "Comprar leche"
+                description: "2 litros (urgente)"
+                completed: true
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      summary: Eliminar una tarea
+      operationId: deleteTask
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la tarea
+          example: "abc123"
+      responses:
+        "204":
+          description: Tarea eliminada exitosamente
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
