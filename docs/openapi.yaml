@@ -32,6 +32,10 @@ components:
       required:
         - title
       properties:
+        id:
+          type: string
+          description: ID de la tarea
+          example: "abc123"
         title:
           type: string
           description: Título de la tarea
@@ -46,7 +50,51 @@ components:
           description: Estado de la tarea
           default: false
           example: false
-      additionalProperties: false
+
+    TaskDTO:
+      type: object
+      required:
+        - id
+        - title
+      properties:
+        id:
+          type: string
+          description: ID de la tarea
+          example: "abc123"
+        title:
+          type: string
+          description: Título de la tarea
+          example: "Comprar leche"
+        description:
+          type: string
+          description: Descripción opcional de la tarea
+          example: "2 litros"
+          nullable: true
+        completed:
+          type: boolean
+          description: Estado de la tarea
+          default: false
+          example: false
+
+    TaskDTOI:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          description: Título de la tarea
+          example: "Comprar leche"
+        description:
+          type: string
+          description: Descripción opcional de la tarea
+          example: "2 litros"
+          nullable: true
+        completed:
+          type: boolean
+          description: Estado de la tarea
+          default: false
+          example: false
 
     Error:
       type: object
@@ -92,23 +140,36 @@ paths:
             schema:
               type: object
               properties:
-                username: { type: string, example: "testuser" }
-                password: { type: string, example: "testpassword" }
-              required: [username, password]
+                username:
+                  type: string
+                  example: "testuser"
+                password:
+                  type: string
+                  example: "testpassword"
+              required:
+                - username
+                - password
       responses:
         "200":
           description: Token generado exitosamente
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Token" }
-              example:
-                access_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                token_type: "bearer"
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                  token_type:
+                    type: string
+                    example: "bearer"
         "401":
           $ref: "#/components/responses/Unauthorized"
           content:
             application/json:
-              example: { detail: "Incorrect username or password" }
+              example:
+                detail: "Incorrect username or password"
+
   /tasks/:
     post:
       summary: Crear una nueva tarea
@@ -120,7 +181,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Task"
+              $ref: "#/components/schemas/TaskDTOI"
             example:
               title: "Comprar leche"
               description: "2 litros"
@@ -131,8 +192,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Task"
+                $ref: "#/components/schemas/TaskDTO"
               example:
+                id: "abc123"
                 title: "Comprar leche"
                 description: "2 litros"
                 completed: false
@@ -152,12 +214,14 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Task"
+                  $ref: "#/components/schemas/TaskDTO"
               example:
-                - title: "Comprar leche"
+                - id: "abc123"
+                  title: "Comprar leche"
                   description: "2 litros"
                   completed: false
-                - title: "Llamar al cliente"
+                - id: "def456"
+                  title: "Llamar al cliente"
                   description: null
                   completed: true
         "401":
@@ -183,8 +247,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Task"
+                $ref: "#/components/schemas/TaskDTO"
               example:
+                id: "abc123"
                 title: "Comprar leche"
                 description: "2 litros"
                 completed: false
@@ -211,7 +276,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/Task"
+              $ref: "#/components/schemas/TaskDTOI"
             example:
               title: "Comprar leche"
               description: "2 litros (urgente)"
@@ -222,8 +287,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Task"
+                $ref: "#/components/schemas/TaskDTO"
               example:
+                id: "abc123"
                 title: "Comprar leche"
                 description: "2 litros (urgente)"
                 completed: true
