@@ -1,5 +1,6 @@
 # adapters/http_controller.py
 from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List
 from domain.task import Task
@@ -9,10 +10,25 @@ from config.auth import get_current_user, authenticate_user, create_access_token
 from fastapi.security import OAuth2PasswordRequestForm
 
 app = FastAPI(title="Backend para tasks")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000",
+                   "https://womfrontend.web.app"],  # URL de tu frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 task_service = TaskService(FirestoreTaskRepository())
 
 
 class TaskDTO(BaseModel):
+    id: str
+    title: str
+    description: Optional[str] = None
+    completed: bool = False
+
+
+class TaskDTOI(BaseModel):
     title: str
     description: Optional[str] = None
     completed: bool = False
@@ -32,7 +48,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
 
 @app.post("/tasks/", response_model=TaskDTO, status_code=201)
-async def create_task(task_dto: TaskDTO, user: str = Depends(get_current_user)):
+async def create_task(task_dto: TaskDTOI, user: str = Depends(get_current_user)):
     task = Task(id=None, **task_dto.dict())
     created_task = await task_service.create_task(task)
     return created_task
@@ -54,7 +70,7 @@ async def get_task(task_id: str, user: str = Depends(get_current_user)):
 
 
 @app.put("/tasks/{task_id}", response_model=TaskDTO)
-async def update_task(task_id: str, task_dto: TaskDTO, user: str = Depends(get_current_user)):
+async def update_task(task_id: str, task_dto: TaskDTOI, user: str = Depends(get_current_user)):
     try:
         task = Task(id=task_id, **task_dto.dict())
         updated_task = await task_service.update_task(task_id, task)
