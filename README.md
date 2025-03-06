@@ -6,8 +6,8 @@ API RESTful con arquitectura hexagonal, autenticación JWT y despliegue en Googl
 
 1. Clona el repositorio:
    ```bash
-   git clone <repository-url>
-   cd todo-api
+   git clone https://github.com/MasterMarandu/wombackend.git
+   cd wombackend
 
 
 2. Construir la imagen
